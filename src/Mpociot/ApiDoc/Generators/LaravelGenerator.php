@@ -46,13 +46,14 @@ class LaravelGenerator extends AbstractGenerator
      *
      * @return array
      */
-    public function processRoute($route, $bindings = [], $headers = [], $withResponse = true)
+    public function processRoute($route, $bindings = [], $headers = [], $withResponse = true, $actAs = '')
     {
         $content = '';
 
         $routeAction = $route->getAction();
         $routeGroup = $this->getRouteGroup($routeAction['uses']);
         $routeDescription = $this->getRouteDescription($routeAction['uses']);
+        $this->setUserToBeImpersonated($actAs);
 
         if ($withResponse) {
             $response = $this->getRouteResponse($route, $bindings, $headers);
@@ -160,5 +161,24 @@ class LaravelGenerator extends AbstractGenerator
         }
 
         return [];
+    }
+
+    /**
+     * @param $actAs
+     */
+    private function setUserToBeImpersonated($actAs)
+    {
+        $laravel = app();
+        if (! empty($actAs)) {
+            if (version_compare($laravel->version(), '5.2.0', '<')) {
+                $userModel = config('auth.model');
+                $user = $userModel::find((int) $actAs);
+                $laravel['auth']->setUser($user);
+            } else {
+                $userModel = config('auth.providers.users.model');
+                $user = $userModel::find((int) $actAs);
+                $laravel['auth']->guard()->setUser($user);
+            }
+        }
     }
 }

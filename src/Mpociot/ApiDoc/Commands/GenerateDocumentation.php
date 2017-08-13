@@ -68,8 +68,7 @@ class GenerateDocumentation extends Command
         $allowedRoutes = $this->option('routes');
         $routePrefix = $this->option('routePrefix');
         $middleware = $this->option('middleware');
-
-        $this->setUserToBeImpersonated($this->option('actAsUserId'));
+        $actAs = $this->option('actAsUserId');
 
         if ($routePrefix === null && ! count($allowedRoutes) && $middleware === null) {
             $this->error('You must provide either a route prefix or a route or a middleware to generate the documentation.');
@@ -80,7 +79,7 @@ class GenerateDocumentation extends Command
         $generator->prepareMiddleware($this->option('useMiddlewares'));
 
         if ($this->option('router') === 'laravel') {
-            $parsedRoutes = $this->processLaravelRoutes($generator, $allowedRoutes, $routePrefix, $middleware);
+            $parsedRoutes = $this->processLaravelRoutes($generator, $allowedRoutes, $routePrefix, $middleware, $actAs);
         } else {
             $parsedRoutes = $this->processDingoRoutes($generator, $allowedRoutes, $routePrefix, $middleware);
         }
@@ -213,24 +212,6 @@ class GenerateDocumentation extends Command
     }
 
     /**
-     * @param $actAs
-     */
-    private function setUserToBeImpersonated($actAs)
-    {
-        if (! empty($actAs)) {
-            if (version_compare($this->laravel->version(), '5.2.0', '<')) {
-                $userModel = config('auth.model');
-                $user = $userModel::find((int) $actAs);
-                $this->laravel['auth']->setUser($user);
-            } else {
-                $userModel = config('auth.providers.users.model');
-                $user = $userModel::find((int) $actAs);
-                $this->laravel['auth']->guard()->setUser($user);
-            }
-        }
-    }
-
-    /**
      * @return mixed
      */
     private function getRoutes()
@@ -243,13 +224,15 @@ class GenerateDocumentation extends Command
     }
 
     /**
-     * @param AbstractGenerator  $generator
+     * @param AbstractGenerator $generator
      * @param $allowedRoutes
      * @param $routePrefix
      *
+     * @param $middleware
+     * @param $actAs
      * @return array
      */
-    private function processLaravelRoutes(AbstractGenerator $generator, $allowedRoutes, $routePrefix, $middleware)
+    private function processLaravelRoutes(AbstractGenerator $generator, $allowedRoutes, $routePrefix, $middleware, $actAs)
     {
         $withResponse = $this->option('noResponseCalls') === false;
         $routes = $this->getRoutes();
@@ -258,7 +241,7 @@ class GenerateDocumentation extends Command
         foreach ($routes as $route) {
             if (in_array($route->getName(), $allowedRoutes) || str_is($routePrefix, $generator->getUri($route)) || in_array($middleware, $route->middleware())) {
                 if ($this->isValidRoute($route) && $this->isRouteVisibleForDocumentation($route->getAction()['uses'])) {
-                    $parsedRoutes[] = $generator->processRoute($route, $bindings, $this->option('header'), $withResponse);
+                    $parsedRoutes[] = $generator->processRoute($route, $bindings, $this->option('header'), $withResponse, $actAs);
                     $this->info('Processed route: ['.implode(',', $generator->getMethods($route)).'] '.$generator->getUri($route));
                 } else {
                     $this->warn('Skipping route: ['.implode(',', $generator->getMethods($route)).'] '.$generator->getUri($route));

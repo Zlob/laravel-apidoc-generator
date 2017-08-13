@@ -32,9 +32,10 @@ abstract class AbstractGenerator
      * @param array $bindings
      * @param bool $withResponse
      *
+     * @param string $actAs
      * @return array
      */
-    abstract public function processRoute($route, $bindings = [], $withResponse = true);
+    abstract public function processRoute($route, $bindings = [], $withResponse = true, $actAs = '');
 
     /**
      * Prepares / Disables route middlewares.
