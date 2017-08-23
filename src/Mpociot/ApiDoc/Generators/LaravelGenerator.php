@@ -224,18 +224,17 @@ class LaravelGenerator extends AbstractGenerator
                 }
             }
 
-            $fractal = new Manager();
+//            $fractal = new Manager();
             $resource = [];
+            $trans = resolve($transformer);
             if ($tag->getName() == 'transformer') {
                 // just one
-                $resource = new Item($demoData, new $transformer);
+                return \response($trans->transform($demoData));
             }
             if ($tag->getName() == 'transformercollection') {
                 // a collection
-                $resource = new Collection([$demoData, $demoData], new $transformer);
+                return \response($trans->transformCollection($demoData));
             }
-
-            return \response($fractal->createData($resource)->toJson());
         } catch (\Exception $e) {
             // it isn't possible to parse the transformer
             return;
