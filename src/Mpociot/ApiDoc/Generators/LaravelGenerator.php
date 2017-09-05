@@ -11,6 +11,7 @@ use Mpociot\Reflection\DocBlock\Tag;
 use Illuminate\Support\Facades\Request;
 use League\Fractal\Resource\Collection;
 use Illuminate\Foundation\Http\FormRequest;
+use DB;
 
 class LaravelGenerator extends AbstractGenerator
 {
@@ -69,12 +70,14 @@ class LaravelGenerator extends AbstractGenerator
                 $showresponse = true;
             }
             if (! $response) {
+                DB::beginTransaction();
                 $transformerResponse = $this->getTransformerResponse($routeDescription['tags']);
                 if ($transformerResponse) {
                     // we have a transformer response from the docblock ( @transformer || @transformercollection )
                     $response = $transformerResponse;
                     $showresponse = true;
                 }
+                DB::rollBack();
             }
             if (! $response) {
                 $response = $this->getRouteResponse($route, $bindings, $headers);
