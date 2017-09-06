@@ -236,7 +236,7 @@ class LaravelGenerator extends AbstractGenerator
             }
             if ($tag->getName() == 'transformercollection') {
                 // a collection
-                return \response($trans->transformCollection($demoData));
+                return \response($trans->transformCollection($type::limit(10)->get()));
             }
         } catch (\Exception $e) {
             // it isn't possible to parse the transformer
